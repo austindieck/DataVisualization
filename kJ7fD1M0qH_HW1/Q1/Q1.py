@@ -1,6 +1,7 @@
 import http.client
 import json
 import csv
+import requests
 
 
 #############################################################################################################################
@@ -61,8 +62,9 @@ class Graph:
         add a tuple (id, name) representing a node to self.nodes if it does not already exist
         The graph should not contain any duplicate nodes
         """
-        if (id, name) not in self.nodes:
-            self.nodes.append((id, name))
+        name_no_space = name.replace(",", "")
+        if id not in [node[0] for node in self.nodes]:
+            self.nodes.append((id, name_no_space))
         return
 
 
@@ -73,11 +75,27 @@ class Graph:
         Where 'source' is the id of the source node and 'target' is the id of the target node
         e.g., for two nodes with ids 'a' and 'b' respectively, add the tuple ('a', 'b') to self.edges
         """
-        edge = sorted(tuple((source, target)))
+        edge = tuple(sorted((source, target)))
 
         if edge not in self.edges:
-            self.edges.append((source, target))
+            self.edges.append(edge)
         return
+
+    def add_node_and_edge(self, source_id: str, source_name: str, target_id: str, target_name: str) -> None:
+        self.add_node(id=target_id, name=target_name)
+        self.add_edge(source=source_id, target=target_id)
+
+    def expand_graph(self, nodes: list, tmdb_api_utils) -> list:
+        new_nodes = []
+        for node_id in nodes:
+            movies = tmdb_api_utils.get_movie_credits_for_person(node_id, vote_avg_threshold=8.0)
+            for movie in movies:
+                cast = tmdb_api_utils.get_movie_cast(movie_id=movie['id'], limit=3)
+                for actor in cast:
+                    if str(actor['id']) != node_id:
+                        self.add_node_and_edge(source_id=node_id, source_name='', target_id=str(actor['id']), target_name=actor['character'])
+                        new_nodes.append(str(actor['id']))
+        return new_nodes
 
 
     def total_nodes(self) -> int:
@@ -103,15 +121,22 @@ class Graph:
         or {'a': 22, 'b': 22}
         """
         my_dict = dict()
-        for node in self.nodes:
-            for edge in self.edges:
-                if node[0] in edge and node[0] is in my_dict.keys():
-                    my_dict[node[0]] += 1
 
-            my_dict[node[0]] = 0
+        # Count the degree of each node
+        for edge in self.edges:
+            for node in edge:
+                if node in my_dict:
+                    my_dict[node] += 1
+                else:
+                    my_dict[node] = 1
 
+        # Find the maximum degree
+        max_degree = max(my_dict.values(), default=0)
 
-        return NotImplemented
+        # Collect all nodes with the maximum degree
+        output_dict = {key: value for key, value in my_dict.items() if value == max_degree}
+
+        return output_dict
 
 
     def print_nodes(self):
@@ -198,7 +223,40 @@ class  TMDBAPIUtils:
                 Note that this is an example of the structure of the list and some of the fields returned by the API.
                 The result of the API call will include many more fields for each cast member.
         """
-        return NotImplemented
+        url = f'https://api.themoviedb.org/3/movie/{movie_id}/credits'
+        params = {
+            'api_key': self.api_key,
+            'language': 'en-US'
+        }
+
+        response = requests.get(url, params=params)
+
+        if response.status_code != 200:
+            print('Unsuccessful request')
+            print(response)
+            return []
+
+        data = response.json()
+        cast = data.get('cast', [])
+
+        if exclude_ids:
+            cast = [member for member in cast if member['id'] not in exclude_ids]
+
+        if limit is not None:
+            cast = [member for member in cast if member['order'] < limit]
+
+        result = [
+            {
+                'id': member['id'],
+                'character': member['character'],
+                'credit_id': member['credit_id']
+            }
+            for member in cast
+        ]
+
+        return result
+
+
 
 
     def get_movie_credits_for_person(self, person_id:str, vote_avg_threshold:float=None)->list:
@@ -217,7 +275,35 @@ class  TMDBAPIUtils:
                 'title': 'Long, Stock and Two Smoking Barrels' # the title (not original title) of the credit
                 'vote_avg': 5.0 # the float value of the vote average value for the credit}, ... ]
         """
-        return NotImplemented
+        url = f'https://api.themoviedb.org/3/person/{person_id}/movie_credits'
+        params = {
+            'api_key': self.api_key,
+            'language': 'en-US'
+        }
+
+        response = requests.get(url, params=params)
+
+        if response.status_code != 200:
+            print('Unsuccessful request')
+            print(response)
+            return []
+
+        data = response.json()
+        cast = data.get('cast', [])
+
+        if vote_avg_threshold is not None:
+            cast = [member for member in cast if member['vote_average'] >= vote_avg_threshold]
+
+        result = [
+            {
+                'id': member['id'],
+                'title': member['title'],
+                'vote_avg': member['vote_average']
+            }
+            for member in cast
+        ]
+
+        return result
 
 
 #############################################################################################################################
@@ -322,7 +408,7 @@ def return_name()->str:
     e.g., gburdell3
     Do not return your 9 digit GTId
     """
-    return NotImplemented
+    return "adieck3"
 
 
 # You should modify __main__ as you see fit to build/test your graph using  the TMDBAPIUtils & Graph classes.
@@ -331,8 +417,24 @@ def return_name()->str:
 if __name__ == "__main__":
 
     graph = Graph()
-    graph.add_node(id='2975', name='Laurence Fishburne')
-    tmdb_api_utils = TMDBAPIUtils(api_key='<your API key>')
+    laurence_id = '2975'
+    graph.add_node(id=str(laurence_id), name='Laurence Fishburne')
+    tmdb_api_utils = TMDBAPIUtils(api_key='4e20fb95107c26f1646a29be01113bc3')
+
+    laurence_movies = tmdb_api_utils.get_movie_credits_for_person(laurence_id,vote_avg_threshold=8.0)
+
+    new_nodes = []
+
+    for movie in laurence_movies:
+        cast = tmdb_api_utils.get_movie_cast(movie['id'], limit = 3)
+        for actor in cast:
+            if str(actor['id']) != laurence_id:
+                new_nodes.append(str(actor['id']))
+                graph.add_node_and_edge(laurence_id, 'Laurence Fishburne', str(actor['id']), actor['character'])
+
+    for i in range(2):
+        new_nodes = graph.expand_graph(new_nodes, tmdb_api_utils)
+
 
     # call functions or place code here to build graph (graph building code not graded)
     # Suggestion: code should contain steps outlined above in BUILD CO-ACTOR NETWORK
