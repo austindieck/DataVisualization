@@ -6,8 +6,15 @@
 <head>
   <style>    
     /* Define css rules here */
+    body {
+      font-family: sans-serif;
+    }
+
+    svg {
+      background-color: black;
+    }
   </style>
-<title></title>
+<title>Wildlife Trafficking Incidents per Species (2015 to 2023)</title>
 </head>
 
 <body>
@@ -18,62 +25,116 @@
 
 
   <script>
-    // define the dimensions and margins for the graph
-    var margin;
-    var width;
-    var height;
+     // Define the dimensions and margins for the graph
+    var margin = { top: 40, right: 30, bottom: 50, left: 100 };
+    var width = 900 - margin.left - margin.right;
+    var height = 370 - margin.top - margin.bottom; // Height increased for better visibility
 
-
-    // create scales x & y for X and Y axis and set their ranges
-    var x;
-    var y;
-
-
-    // append svg element to the body of the page
+    // Append svg element to the body of the page
     var svg = d3.select("body").append("svg")
-	   	// set the id, dimensions and position of the svg element 	
-	    .append("g")
-	    .attr("id", "container");
-
+      .attr("id", "svg1")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom);
 
     // Get the data and filter for top 5 most trafficked species
-	  var pathToCsv = "q3.csv";		// path to csv
-	
-    d3.dsv(",", pathToCsv, function (d) {
+    var pathToCsv = "q3.csv"; // Path to csv
+
+    d3.dsv(",", pathToCsv, function(d) {
       return {
-        // format data attributes if required
-      }
-    }).then(function (data) {
-      console.log(data); // you should see the data in your browser's developer tools console 
-      
-      /* Create bar plot using data from csv */
+        species: d.species,
+        count: +d.count // Parse count to integer
+      };
+    }).then(function(data) {
+      console.log(data);
 
-      // set the domains of X and Y scales based on data
-      x.domain();
-      y.domain();
+      // Filter and sort data for the top 5 species
+      data = data.sort((a, b) => d3.descending(a.count, b.count)).slice(0, 5);
 
-      // Add bars to svg - create new elements based on your data
-      svg.selectAll()
+      // Set up the scales: X is linear (count) and Y is band (species)
+      var xScale = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.count)]) // Linear scale for count
+        .range([0, width]);
 
+      var yScale = d3.scaleBand()
+        .domain(data.map(d => d.species)) // Categorical scale for species
+        .range([0, height])
+        .padding(0.1);
 
-      // Add the X Axis
-      svg.append()
+      var colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
-      // Add the text label for X Axis
-      svg.append()
+      var containerGroup = svg.append("g")
+        .attr("id", "container")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-      // Add the Y Axis
-      svg.append()
+      var barsGroup = containerGroup.append("g")
+          .attr("id", "bars");
 
-      // Add the text label for Y axis
-      svg.append()
+      // Add bars to the svg - create new elements based on your data
+      barsGroup.selectAll("rect")
+        .data(data)
+        .enter()
+        .append("rect")
+        .attr("class", "bar")
+        .attr("y", d => yScale(d.species))
+        .attr("x", 0)
+        .attr("width", d => xScale(d.count))
+        .attr("height", yScale.bandwidth())
+        .attr("fill", (d, i) => colorScale(i));
+
+      // Add the X Axis (Count)
+      containerGroup.append("g")
+          .attr("transform", "translate(0," + height + ")")
+          .call(d3.axisBottom(xScale).ticks(5).tickFormat(d3.format("d")))
+          .attr("id", "x_axis")
+          .attr("fill", "white")
+          .attr("stroke", "white");
+
+      // Add the X Axis label (Count)
+      containerGroup.append("text")
+          .attr("x", width / 2)
+          .attr("y", height + margin.bottom - 10)
+          .attr("id", "x_axis_label")
+          .style("font-size", "14px")
+          .style("fill", "white")
+          .text("Count");
+
+      // Add the Y Axis (Species)
+      containerGroup.append("g")
+        .call(d3.axisLeft(yScale))
+        .attr("id", "y_axis")
+        .attr("fill", "white")
+        .attr("stroke", "white");
+
+      // Add the Y Axis label (Species)
+      containerGroup.append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("x", -height / 2)
+          .attr("y", -margin.left + 20)
+          .attr("id", "y_axis_label")
+          .style("font-size", "14px")
+          .style("fill", "white")
+          .text("Species");
 
       // Add GT username
-      svg.append()
+      containerGroup.append("text")
+          .attr("x", width + margin.right - 5)
+          .attr("y", height + margin.bottom - 5)
+          .attr("text-anchor", "end")
+          .attr("id", "credit")
+          .style("font-size", "12px")
+          .style("fill", "white")
+          .text("adieck3");
 
       // Add Title
-      svg.append()
-
+      containerGroup.append("text")
+          .attr("x", width / 2)
+          .attr("y", -margin.top / 2)
+          .attr("text-anchor", "middle")
+          .attr("id", "title")
+          .style("font-size", "16px")
+          .style("font-weight", "bold")
+          .style("fill", "white")
+          .text("Wildlife Trafficking Incidents per Species (2015 to 2023)");
 
     }).catch(function (error) {
       console.log(error);

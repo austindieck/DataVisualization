@@ -220,13 +220,35 @@ class HW2_sql():
     # Part 7 Creating Views [6 points]
     def part_7(self,connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_7_sql = ""
+        part_7_sql = ("CREATE VIEW good_collaboration AS"
+                      " SELECT mc1.cast_id AS cast_member_id1, mc2.cast_id AS cast_member_id2,"
+                      " COUNT(DISTINCT mc1.movie_id) AS movie_count,"
+                      " AVG(m.score) AS average_movie_score"
+                      " FROM movie_cast mc1"
+                      " INNER JOIN movie_cast mc2 ON mc1.movie_id = mc2.movie_id"
+                      " INNER JOIN movies m ON mc1.movie_id = m.id"
+                      " WHERE mc1.cast_id < mc2.cast_id"
+                      " GROUP BY mc1.cast_id, mc2.cast_id"
+                      " HAVING movie_count >= 2 AND average_movie_score >= 40;"
+                      )
         ######################################################################
         return self.execute_query(connection, part_7_sql)
     
     def part_8(self,connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_8_sql = ""
+        part_8_sql = ("SELECT cast_id, cast_name, printf('%.2f', AVG(average_movie_score)) AS collaboration_score"
+                      " FROM ("
+                      " SELECT gc.cast_member_id1 AS cast_id, mc1.cast_name, gc.average_movie_score"
+                      " FROM good_collaboration gc"
+                      " INNER JOIN movie_cast mc1 ON gc.cast_member_id1 = mc1.cast_id"
+                      " UNION ALL"
+                      " SELECT gc.cast_member_id2 AS cast_id, mc2.cast_name, gc.average_movie_score"
+                      " FROM good_collaboration gc"
+                      " INNER JOIN movie_cast mc2 ON gc.cast_member_id2 = mc2.cast_id"
+                      " )"
+                      " GROUP BY cast_id, cast_name"
+                      " ORDER BY collaboration_score DESC, cast_name ASC"
+                      " LIMIT 5;")
         ######################################################################
         cursor = connection.execute(part_8_sql)
         return cursor.fetchall()
@@ -234,11 +256,19 @@ class HW2_sql():
     # Part 9 FTS [4 points]
     def part_9_a(self,connection,path):
         ############### EDIT SQL STATEMENT ###################################
-        part_9_a_sql = ""
+        part_9_a_sql = ("CREATE VIRTUAL TABLE movie_overview USING fts3("
+                        " id INTEGER,"
+                        " overview TEXT);"
+                        )
         ######################################################################
         connection.execute(part_9_a_sql)
         ############### CREATE IMPORT CODE BELOW ############################
-        
+        with open(path, 'r', encoding='utf-8-sig') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                sql = "INSERT INTO movie_overview (id, overview) VALUES (?, ?);"
+                connection.execute(sql, (int(row[0]), row[1] if row[1] else None))
+            connection.commit()
         ######################################################################
         sql = "SELECT COUNT(id) FROM movie_overview;"
         cursor = connection.execute(sql)
@@ -246,14 +276,18 @@ class HW2_sql():
         
     def part_9_b(self,connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_9_b_sql = ""
+        part_9_b_sql = ("SELECT COUNT(*)"
+                        " FROM movie_overview"
+                        " WHERE overview MATCH 'fight';")
         ######################################################################
         cursor = connection.execute(part_9_b_sql)
         return cursor.fetchall()[0][0]
     
     def part_9_c(self,connection):
         ############### EDIT SQL STATEMENT ###################################
-        part_9_c_sql = ""
+        part_9_c_sql = ("SELECT COUNT(*)"
+                        " FROM movie_overview"
+                        " WHERE overview MATCH 'space NEAR/5 program';")
         ######################################################################
         cursor = connection.execute(part_9_c_sql)
         return cursor.fetchall()[0][0]
