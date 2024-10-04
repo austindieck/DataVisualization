@@ -19,7 +19,9 @@ d3.csv("boardgame_ratings.csv").then(function(data) {
 
 
     createLineChart(data);
-    createLineChart2(data)
+    createLineChart2(data);
+    createLineChartSquareRoot(data);
+    createLineChartLog(data);
 });
 
 // Function to create the line chart
@@ -115,6 +117,7 @@ function createLineChart(data) {
         .attr("x", width / 2)
         .attr("y", margin.bottom - 10)
         .attr("text-anchor", "middle")
+        .attr("fill", "black")
         .text("Month");
 
     // Y-axis label
@@ -123,6 +126,7 @@ function createLineChart(data) {
         .attr("x", -height / 2)
         .attr("y", -margin.left + 20)
         .attr("text-anchor", "middle")
+        .attr("fill", "black")
         .text("Num of Ratings");
 }
 
@@ -249,6 +253,7 @@ function createLineChart2(data) {
         .attr("x", width / 2)
         .attr("y", margin.bottom - 10)
         .attr("text-anchor", "middle")
+        .attr("fill", "black")
         .text("Month");
 
     // Y-axis label
@@ -257,5 +262,324 @@ function createLineChart2(data) {
         .attr("x", -height / 2)
         .attr("y", -margin.left + 20)
         .attr("text-anchor", "middle")
+        .attr("fill", "black")
         .text("Num of Ratings");
+
+    // Add legend
+    var legend = svg.append("g")
+        .attr("id", "legend-b")
+        .attr("transform", "translate(800, 400)");
+
+    // Add legend symbol                
+    legend.append("circle")
+        .attr("fill", "black")
+        .attr("r", 15);
+
+    // Add rank text
+    legend.append("text")
+        .attr("fill", "white")
+        .attr("font-size", 8)
+        .attr("text-anchor", "middle")
+        .attr("dy", 2)
+        .text("Rank");
+}
+
+// Function to create the square root scale line chart
+function createLineChartSquareRoot(data) {
+    var margin = {top: 50, right: 100, bottom: 50, left: 80},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // Create the SVG container for the chart
+    var svg = d3.select("#chart-container")
+        .append("svg")
+        .attr("id", "svg-c-1")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+    // Add title
+    svg.append("text")
+        .attr("id", "title-c-1")
+        .attr("x", (width / 2))
+        .attr("y", margin.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "bold")
+        .text("Number of Ratings 2016-2020 (Square Root Scale)");
+
+    // Group for the plot elements
+    var plot = svg.append("g")
+        .attr("id", "plot-c-1")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Create the x and y scales
+    var xScale = d3.scaleTime()
+        .domain(d3.extent(data, function(d) { return d.date; }))
+        .range([0, width]);
+
+    var yScale = d3.scaleSqrt()
+        .domain([0, d3.max(data, function(d) {
+            return Math.max(d['Catan'], d['Dominion'], d['Codenames'], d['Terraforming Mars'], d['Gloomhaven'], d['Magic: The Gathering'], d['Dixit'], d['Monopoly']);
+        })])
+        .range([height, 0]);
+
+    // Define the line generator
+    var line = d3.line()
+        .x(function(d) { return xScale(d.date); })
+        .y(function(d) { return yScale(d.value); })
+        .curve(d3.curveMonotoneX);
+
+    // Add the x-axis
+    var xAxisGroup = plot.append("g")
+        .attr("id", "x-axis-c-1")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale).ticks(d3.timeMonth.every(3)).tickFormat(d3.timeFormat("%b %y")));
+
+    // Add the y-axis
+    var yAxisGroup = plot.append("g")
+        .attr("id", "y-axis-c-1")
+        .call(d3.axisLeft(yScale));
+
+    // Group for the lines
+    var linesGroup = plot.append("g").attr("id", "lines-c-1");
+
+    // Group for the symbols
+    var symbolsGroup = plot.append("g").attr("id", "symbols-c-1");
+
+    // Use d3.schemeCategory10 for colors
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    var games = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars', 'Gloomhaven', 'Magic: The Gathering', 'Dixit', 'Monopoly'];
+
+    // Draw the lines for each game
+    games.forEach(function(game) {
+        var gameData = data.map(function(d) {
+            return {date: d.date, value: d[game], rank: d[game + '_rank']};
+        });
+
+        // Append the line for the game
+        linesGroup.append("path")
+            .datum(gameData)
+            .attr("fill", "none")
+            .attr("stroke", color(game))
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+
+        // Add labels for each game line
+        linesGroup.append("text")
+            .datum(gameData[gameData.length - 1])
+            .attr("transform", function(d) { return "translate(" + xScale(d.date) + "," + yScale(d.value) + ")"; })
+            .attr("x", 5)
+            .attr("dy", ".35em")
+            .style("fill", color(game))
+            .text(game);
+
+        // Add symbols with rankings
+        gameData.forEach(function(d){
+            var month = d.date.getMonth();
+            if ((month === 0 || month === 3 || month === 6 || month === 9) && d.rank !== undefined && !isNaN(d.rank))  {
+                symbolsGroup.append("circle")
+                    .attr("class", game)
+                    .attr("r", 10)
+                    .attr("fill", color(game))
+                    .attr("cx", xScale(d.date))
+                    .attr("cy", yScale(d.value));
+
+                symbolsGroup.append("text")
+                    .attr("class", game)
+                    .attr("fill", "white")
+                    .attr("font-size", 12)
+                    .attr("x", xScale(d.date))
+                    .attr("y", yScale(d.value))
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "0.35em")
+                    .text(d.rank);
+            }
+        });
+    });
+
+    // X-axis label
+    xAxisGroup.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.bottom - 10)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .text("Month");
+
+    // Y-axis label
+    yAxisGroup.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 20)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .text("Num of Ratings");
+
+    // Add legend
+    var legend = svg.append("g")
+        .attr("id", "legend-c-1")
+        .attr("transform", "translate(800, 400)");
+
+    // Add legend symbol                
+    legend.append("circle")
+        .attr("fill", "black")
+        .attr("r", 15);
+
+    // Add rank text
+    legend.append("text")
+        .attr("fill", "white")
+        .attr("font-size", 8)
+        .attr("text-anchor", "middle")
+        .attr("dy", 2)
+        .text("Rank");
+}
+
+// Function to create the log scale line chart
+function createLineChartLog(data) {
+    var margin = {top: 50, right: 100, bottom: 50, left: 80},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+    // Create the SVG container for the chart
+    var svg = d3.select("#chart-container")
+        .append("svg")
+        .attr("id", "svg-c-2")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+    // Add title
+    svg.append("text")
+        .attr("id", "title-c-2")
+        .attr("x", (width / 2))
+        .attr("y", margin.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "bold")
+        .text("Number of Ratings 2016-2020 (Log Scale)");
+
+    // Group for the plot elements
+    var plot = svg.append("g")
+        .attr("id", "plot-c-2")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Create the x and y scales
+    var xScale = d3.scaleTime()
+        .domain(d3.extent(data, function(d) { return d.date; }))
+        .range([0, width]);
+
+    var yScale = d3.scaleLog()
+        .domain([1, d3.max(data, function(d) {
+            return Math.max(d['Catan'], d['Dominion'], d['Codenames'], d['Terraforming Mars'], d['Gloomhaven'], d['Magic: The Gathering'], d['Dixit'], d['Monopoly']);
+        })])
+        .range([height, 0]);
+
+    // Define the line generator
+    var line = d3.line()
+        .x(function(d) { return xScale(d.date); })
+        .y(function(d) { return yScale(d.value); })
+        .curve(d3.curveMonotoneX);
+
+    // Add the x-axis
+    var xAxisGroup = plot.append("g")
+        .attr("id", "x-axis-c-2")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(xScale).ticks(d3.timeMonth.every(3)).tickFormat(d3.timeFormat("%b %y")));
+
+    // Add the y-axis
+    var yAxisGroup = plot.append("g")
+        .attr("id", "y-axis-c-2")
+        .call(d3.axisLeft(yScale).ticks(10, d3.format(".0f"))); // Log scale axis typically uses a custom format
+
+    // Group for the lines
+    var linesGroup = plot.append("g").attr("id", "lines-c-2");
+
+    // Group for the symbols
+    var symbolsGroup = plot.append("g").attr("id", "symbols-c-2");
+
+    // Use d3.schemeCategory10 for colors
+    var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+    var games = ['Catan', 'Dominion', 'Codenames', 'Terraforming Mars', 'Gloomhaven', 'Magic: The Gathering', 'Dixit', 'Monopoly'];
+
+    // Draw the lines for each game
+    games.forEach(function(game) {
+        var gameData = data.map(function(d) {
+            return {date: d.date, value: d[game], rank: d[game + '_rank']};
+        });
+
+        // Append the line for the game
+        linesGroup.append("path")
+            .datum(gameData)
+            .attr("fill", "none")
+            .attr("stroke", color(game))
+            .attr("stroke-width", 1.5)
+            .attr("d", line);
+
+        // Add labels for each game line
+        linesGroup.append("text")
+            .datum(gameData[gameData.length - 1])
+            .attr("transform", function(d) { return "translate(" + xScale(d.date) + "," + yScale(d.value) + ")"; })
+            .attr("x", 5)
+            .attr("dy", ".35em")
+            .style("fill", color(game))
+            .text(game);
+
+        // Add symbols with rankings
+        gameData.forEach(function(d){
+            var month = d.date.getMonth();
+            if ((month === 0 || month === 3 || month === 6 || month === 9) && d.rank !== undefined && !isNaN(d.rank))  {
+                symbolsGroup.append("circle")
+                    .attr("class", game)
+                    .attr("r", 10)
+                    .attr("fill", color(game))
+                    .attr("cx", xScale(d.date))
+                    .attr("cy", yScale(d.value));
+
+                symbolsGroup.append("text")
+                    .attr("class", game)
+                    .attr("fill", "white")
+                    .attr("font-size", 12)
+                    .attr("x", xScale(d.date))
+                    .attr("y", yScale(d.value))
+                    .attr("text-anchor", "middle")
+                    .attr("dy", "0.35em")
+                    .text(d.rank);
+            }
+        });
+    });
+
+    // X-axis label
+    xAxisGroup.append("text")
+        .attr("x", width / 2)
+        .attr("y", margin.bottom - 10)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .text("Month");
+
+    // Y-axis label
+    yAxisGroup.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 20)
+        .attr("text-anchor", "middle")
+        .attr("fill", "black")
+        .text("Num of Ratings");
+
+    // Add legend
+    var legend = svg.append("g")
+                    .attr("id", "legend-c-2")
+                    .attr("transform", "translate(800, 400)");
+
+    // Add legend symbol                
+    legend.append("circle")
+        .attr("fill", "black")
+        .attr("r", 15);
+
+    // Add rank text
+    legend.append("text")
+        .attr("fill", "white")
+        .attr("font-size", 8)
+        .attr("text-anchor", "middle")
+        .attr("dy", 2)
+        .text("Rank");
 }
