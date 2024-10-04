@@ -189,7 +189,7 @@ function createLineChart2(data) {
         .call(d3.axisLeft(yScale));
 
     // Group for the lines
-    var linesGroup = plot.append("g").attr("id", "lines-a");
+    var linesGroup = plot.append("g").attr("id", "lines-b");
 
     //Group for the symbols
     var symbolsGroup = plot.append("g").attr("id", "symbols-b");
