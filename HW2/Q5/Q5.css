@@ -1,0 +1,54 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    text-align: center;
+}
+
+/* Dropdown styles */
+#gameDropdown {
+    display: block;
+    margin: 10px auto;
+    padding: 8px;
+    font-size: 16px;
+}
+
+/* Choropleth map styles */
+#choropleth {
+    display: block;
+    margin: 0 auto;
+    width: 800px;
+    height: 600px;
+}
+
+/* Legend styles */
+#legend {
+    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#legend rect {
+    width: 30px;
+    height: 20px;
+}
+
+/* Tooltip styles */
+#tooltip {
+    position: absolute;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    padding: 10px;
+    font-size: 12px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+}
+
+.hidden {
+    display: none;
+}

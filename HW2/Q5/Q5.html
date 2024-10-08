@@ -1,73 +1,33 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<head>
-    <!-- add title -->
-    
-    <!-- import required libraries here -->
-    
-    <style>
-        /* define CSS rules here */
-    
-    </style>
+<html lang="en">
 
-    <title></title>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choropleth Map</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
-
 <body>
-    <!-- Add heading for the visualization -->
-    
-    <!-- Create dropdown element here. Options should be added after reading in game file, they should not be created here.-->
+    <h1>Board Game Popularity by Country</h1>
 
+    <!-- Dropdown for game selection -->
+    <select id="gameDropdown"></select>
 
-    <script>
-    
-        // enter code to define margin and dimensions for svg
-        
-        // enter code to create svg
-        
-        // enter code to create color scale
-        
-        // enter code to define tooltip
-        
-        // enter code to define projection and path required for Choropleth
-        // For grading, set the name of functions for projection and path as "projection" and "path"
-        // var projection = 
-        // var path =
+    <!-- SVG container for the choropleth map -->
+    <svg id="choropleth"></svg>
 
+    <!-- Div for displaying the legend -->
+    <div id="legend"></div>
 
-        // define any other global variables 
+    <!-- Div for displaying the tooltip -->
+    <div id="tooltip" class="hidden"></div>
 
-        Promise.all([
-            // enter code to read files
-            
-        ]).then(
-            // enter code to call ready() with required arguments
-            
-        );
-        
-        // this function should be called once the data from files have been read
-        // world: topojson from world_countries.json
-        // gameData: data from ratings-by-country.csv
-        
-        function ready(error, world, gameData) {
-            // enter code to extract all unique games from gameData
-
-            // enter code to append the game options to the dropdown
-            
-            // event listener for the dropdown. Update choropleth and legend when selection changes. Call createMapAndLegend() with required arguments.
-            
-            // create Choropleth with default option. Call createMapAndLegend() with required arguments. 
-        }
-
-        // this function should create a Choropleth and legend using the world and gameData arguments for a selectedGame
-        // also use this function to update Choropleth and legend when a different game is selected from the dropdown
-        function createMapAndLegend(world, gameData, selectedGame){ 
-        
-            
-        }
-    </script>
-
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
+    <script src="d3-tip.min.js"></script>
+    <script src="script.js"></script>
 </body>
 
 </html>

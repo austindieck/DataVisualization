@@ -1,0 +1,15 @@
+/* Style for the SVG container */
+#container {
+    font-family: sans-serif;
+}
+
+/* Style for the lines */
+path {
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+/* Style for the axes */
+.axis text {
+    font-size: 12px;
+}
