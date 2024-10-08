@@ -76,13 +76,21 @@ Promise.all([
             return radiusScale(d.total_count);  // Use the inverted radius scale
         })
         .style("fill", function(d) {
-            return colorScale(d.total_count);
+            d.originalColor = colorScale(d.total_count)
+            return d.originalColor;
         });
 
     node.append("text")
         .attr("dx", 10)
         .attr("dy", ".35em")
         .text(function(d) { return d.name; });
+
+    // add double click release
+    node.on("dblclick", function(d) {
+        d.fx = null;  // Release the node from fixed x position
+        d.fy = null;  // Release the node from fixed y position
+        d3.select(this).select("circle").style("fill", d.originalColor);
+    });
 
     // Ticking function for force simulation
     function tick() {
@@ -111,7 +119,6 @@ Promise.all([
 
     function dragended(d) {
         if (!d3.event.active) force.alphaTarget(0);
-        d.fx = null;
-        d.fy = null;
+        d3.select(this).select("circle").style("fill", "red");
     }
 });
