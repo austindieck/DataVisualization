@@ -32,7 +32,7 @@ Promise.all([
         .nodes(d3.values(nodes))
         .force("link", d3.forceLink(links).distance(50))  // Decrease link distance to bring nodes closer
         .force('center', d3.forceCenter(width / 2, height / 2))
-        .force("charge", d3.forceManyBody().strength(-50))  // Reduce the repulsion force to make the graph smaller
+        .force("charge", d3.forceManyBody().strength(-5))  // Reduce the repulsion force to make the graph smaller
         .alphaTarget(1)
         .on("tick", tick);
 
@@ -80,16 +80,31 @@ Promise.all([
             return d.originalColor;
         });
 
-    node.append("text")
+
+    // Add text element with visibility set to hidden by default
+    var text = node.append("text")
         .attr("dx", 10)
         .attr("dy", ".35em")
-        .text(function(d) { return d.name; });
+        .text(function(d) { return d.name; })
+        .style("visibility", "hidden");  // Initially hidden
+
+    // Show text on hover
+    node.on("mouseover", function(d) {
+        d3.select(this).select("text").style("visibility", "visible");
+    })
+    .on("mouseout", function(d) {
+        // Only hide the text if the node is not pinned (not fixed)
+        if (!d.fx && !d.fy) {
+            d3.select(this).select("text").style("visibility", "hidden");
+        }
+    });
 
     // add double click release
     node.on("dblclick", function(d) {
         d.fx = null;  // Release the node from fixed x position
         d.fy = null;  // Release the node from fixed y position
         d3.select(this).select("circle").style("fill", d.originalColor);
+        d3.select(this).select("text").style("visibility", "hidden");
     });
 
     // Ticking function for force simulation
@@ -110,6 +125,7 @@ Promise.all([
         if (!d3.event.active) force.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
+        d3.select(this).select("text").style("visibility", "visible");
     }
 
     function dragged(d) {
